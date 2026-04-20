@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✈️ Adventure Points Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+  :root { --gold:#F5A623;--mint:#27AE60;--coral:#E74C3C;--bg:#F8F6FF;--text:#2C2C54;--muted:#7F8C8D; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  .app{max-width:680px;margin:0 auto;padding:20px 16px 80px;}
+  .hero{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:24px;padding:28px 24px;color:white;margin-bottom:16px;position:relative;overflow:hidden;}
+  .hero::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:rgba(255,255,255,0.08);border-radius:50%;}
+  .hero-title{font-family:'Fredoka One',cursive;font-size:28px;margin-bottom:2px;position:relative;}
+  .hero-sub{font-size:14px;opacity:.8;margin-bottom:18px;position:relative;}
+  .point-display{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;position:relative;}
+  .point-big{font-family:'Fredoka One',cursive;font-size:56px;line-height:1;text-shadow:0 3px 12px rgba(0,0,0,.2);}
+  .point-label{font-size:18px;opacity:.75;}
+  .dollar-badge{background:rgba(255,255,255,0.2);border-radius:999px;padding:5px 16px;font-size:15px;font-weight:800;display:inline-block;margin-bottom:14px;}
+  .dollar-badge span{color:#FFD700;}
+  .goal-bar-wrap{background:rgba(255,255,255,.2);border-radius:999px;height:18px;overflow:hidden;}
+  .goal-bar{height:100%;background:linear-gradient(90deg,#FFD700,#FFF176);border-radius:999px;transition:width 1s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;justify-content:flex-end;padding-right:8px;min-width:44px;}
+  .goal-bar span{font-size:11px;font-weight:800;color:#6D4C00;}
+  .goal-label{display:flex;justify-content:space-between;margin-top:6px;font-size:12px;opacity:.75;}
+  .destination-tag{display:inline-block;background:rgba(255,255,255,.2);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;margin-top:12px;}
+  .user-bar{display:flex;align-items:center;gap:8px;background:white;border-radius:14px;padding:10px 14px;margin-bottom:12px;border:1.5px solid #EDE9FE;flex-wrap:wrap;}
+  .user-bar-label{font-size:12px;font-weight:700;color:var(--muted);}
+  .user-pill{background:#F5F4FF;border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;color:#667eea;cursor:pointer;border:1.5px solid #E0DEFF;transition:all .2s;}
+  .user-pill.active{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border-color:transparent;}
+  .sync-bar{display:flex;align-items:center;gap:8px;background:white;border-radius:12px;padding:8px 14px;margin-bottom:12px;border:1.5px solid #EDE9FE;font-size:12px;font-weight:700;color:var(--muted);}
+  .sync-dot{width:8px;height:8px;border-radius:50%;background:#27AE60;flex-shrink:0;}
+  .sync-dot.saving{background:var(--gold);animation:blink .8s infinite;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+  .tabs{display:flex;background:white;border-radius:14px;padding:4px;margin-bottom:16px;border:1.5px solid #EDE9FE;gap:3px;}
+  .tab{flex:1;padding:9px 4px;text-align:center;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'Nunito',sans-serif;transition:all .2s;}
+  .tab.active{background:linear-gradient(135deg,#667eea,#764ba2);color:white;}
+  .panel{display:none;}.panel.active{display:block;}
+  .week-card{background:white;border-radius:16px;padding:16px;margin-bottom:14px;border:1.5px solid #EDE9FE;}
+  .week-days{display:flex;gap:6px;margin-top:10px;}
+  .day-pip{flex:1;border-radius:10px;padding:8px 4px;text-align:center;font-size:11px;font-weight:700;background:#F5F4FF;color:#A5B4FC;transition:all .3s;}
+  .day-pip.active{background:linear-gradient(135deg,#667eea,#764ba2);color:white;}
+  .day-pip.today{box-shadow:0 0 0 2px #667eea;}
+  .pip-pts{font-size:10px;font-weight:600;display:block;margin-top:2px;}
+  .streak-card{background:linear-gradient(135deg,#FF6B6B,#FF8E53);border-radius:16px;padding:16px 20px;color:white;display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+  .streak-num{font-family:'Fredoka One',cursive;font-size:42px;line-height:1;}
+  .section-title{font-family:'Fredoka One',cursive;font-size:20px;color:var(--text);margin-bottom:12px;}
+  .category-block{margin-bottom:16px;}
+  .category-header{border-radius:12px;padding:10px 16px;margin-bottom:8px;display:flex;align-items:center;gap:8px;font-weight:800;font-size:13px;}
+  .cat-gold{background:#FFFBEE;color:#92400E;}.cat-silver{background:#F3F4F6;color:#374151;}
+  .cat-daily{background:#EEF2FF;color:#3730a3;}.cat-house{background:#ECFDF5;color:#065F46;}.cat-social{background:#FFF1F2;color:#9f1239;}
+  .activity-row{display:flex;align-items:center;background:white;border-radius:14px;padding:12px 16px;margin-bottom:8px;gap:12px;border:1.5px solid #EDE9FE;transition:transform .15s,box-shadow .15s;}
+  .activity-row:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(102,126,234,.12);}
+  .act-icon{font-size:24px;flex-shrink:0;}
+  .act-name{flex:1;font-size:14px;font-weight:700;}
+  .act-pts{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap;text-align:right;}
+  .act-dollar{font-size:11px;color:#27AE60;font-weight:700;}
+  .log-btn{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:999px;padding:7px 16px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;transition:transform .15s;flex-shrink:0;}
+  .log-btn:hover{transform:scale(1.06);}.log-btn:active{transform:scale(.96);}
+  .log-btn.danger{background:linear-gradient(135deg,#E74C3C,#c0392b);}
+  .log-btn.success{background:linear-gradient(135deg,#27AE60,#1e8449);}
+  .log-btn.warn{background:linear-gradient(135deg,#F5A623,#d4891a);}
+  .milestone-strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;margin-bottom:20px;}
+  .milestone-strip::-webkit-scrollbar{display:none;}
+  .milestone-card{flex-shrink:0;background:white;border-radius:16px;padding:14px;text-align:center;width:120px;border:2px solid #EDE9FE;position:relative;}
+  .milestone-card.achieved{border-color:var(--gold);background:#FFFBEE;}
+  .milestone-card.next{border-color:#667eea;background:#F5F4FF;animation:glow 2s infinite;}
+  @keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(102,126,234,.4);}50%{box-shadow:0 0 0 8px rgba(102,126,234,0);}}
+  .ms-icon{font-size:30px;margin-bottom:4px;}.ms-pts{font-size:11px;font-weight:700;color:var(--muted);}
+  .ms-name{font-size:12px;font-weight:800;margin-top:3px;color:var(--text);}
+  .ms-badge{position:absolute;top:-8px;right:-8px;background:var(--gold);border-radius:50%;width:24px;height:24px;font-size:13px;display:flex;align-items:center;justify-content:center;border:2px solid white;}
+  .settings-card{background:white;border-radius:16px;padding:18px;border:1.5px solid #EDE9FE;margin-bottom:16px;}
+  .settings-label{font-size:13px;font-weight:800;color:var(--muted);display:block;margin-bottom:8px;}
+  .settings-input{width:100%;border-radius:10px;border:1.5px solid #E5E7EB;padding:9px 13px;font-size:14px;font-family:'Nunito',sans-serif;font-weight:700;color:var(--text);outline:none;transition:border-color .2s;}
+  .settings-input:focus{border-color:#667eea;}
+  .admin-activity-row{display:flex;align-items:center;background:#F8F7FF;border-radius:12px;padding:10px 14px;margin-bottom:8px;gap:8px;border:1.5px solid #EDE9FE;flex-wrap:wrap;}
+  .admin-input{border-radius:8px;border:1.5px solid #E5E7EB;padding:6px 10px;font-size:13px;font-family:'Nunito',sans-serif;font-weight:700;color:var(--text);outline:none;background:white;}
+  .admin-input:focus{border-color:#667eea;}
+  .admin-icon-input{width:52px;text-align:center;font-size:18px;}
+  .admin-name-input{flex:1;min-width:120px;}
+  .admin-pts-input{width:90px;}
+  .delete-btn{background:#FEE2E2;color:#E74C3C;border:none;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;flex-shrink:0;}
+  .delete-btn:hover{background:#E74C3C;color:white;}
+  .cat-select{border-radius:8px;border:1.5px solid #E5E7EB;padding:6px 10px;font-size:13px;font-family:'Nunito',sans-serif;font-weight:700;color:var(--text);background:white;outline:none;}
+  .add-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#EEF2FF;border-radius:12px;padding:12px;margin-top:8px;}
+  .history-row{background:white;border-radius:14px;padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;border:1.5px solid #EDE9FE;}
+  .history-name{font-size:13px;font-weight:700;}.history-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+  .history-user-badge{background:#EEF2FF;color:#667eea;border-radius:999px;padding:2px 8px;font-weight:700;font-size:10px;margin-left:6px;}
+  .history-pts{font-size:16px;font-weight:900;color:#667eea;}
+  .empty-state{text-align:center;color:var(--muted);padding:32px;font-size:15px;}
+  .lb-row{background:white;border-radius:14px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;border:1.5px solid #EDE9FE;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);background:#1a1a2e;color:white;padding:13px 24px;border-radius:999px;font-size:14px;font-weight:700;font-family:'Nunito',sans-serif;z-index:9999;transition:transform .4s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.2);}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .confetti-wrap{position:fixed;pointer-events:none;z-index:9998;}
+  .conf-dot{position:absolute;width:9px;height:9px;border-radius:50%;animation:conf-fly 1.1s ease-out forwards;}
+  @keyframes conf-fly{0%{transform:translate(0,0) scale(1);opacity:1;}100%{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0;}}
+  .lock-screen{position:fixed;inset:0;background:rgba(26,26,46,0.75);z-index:8888;display:flex;align-items:center;justify-content:center;}
+  .lock-card{background:white;border-radius:24px;padding:32px;max-width:320px;width:90%;text-align:center;}
+  @media(max-width:480px){.point-big{font-size:44px;}.tab{font-size:11px;padding:8px 2px;}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="hero">
+    <div class="hero-title">✈️ Adventure Points</div>
+    <div class="hero-sub">Earn points, unlock your dream trip!</div>
+    <div class="point-display">
+      <div class="point-big" id="total-pts">0</div>
+      <div class="point-label">pts</div>
+    </div>
+    <div class="dollar-badge">💵 Worth: <span id="dollar-val">$0.00</span></div>
+    <div class="goal-bar-wrap">
+      <div class="goal-bar" id="goal-bar" style="width:5%"><span id="goal-pct">0%</span></div>
+    </div>
+    <div class="goal-label"><span>0</span><span id="goal-label-right">Goal: 100,000 pts = $1,000</span></div>
+    <div class="destination-tag" id="dest-tag">🏁 Destination TBC</div>
+  </div>
+
+  <div class="user-bar">
+    <span class="user-bar-label">Logging as:</span>
+    <div class="user-pill active" id="pill-0" onclick="switchUser(0)">👤 User 1</div>
+    <div class="user-pill" id="pill-1" onclick="switchUser(1)">👤 User 2</div>
+    <div class="user-pill" id="pill-2" onclick="switchUser(2)">👤 User 3</div>
+  </div>
+
+  <div class="sync-bar">
+    <div class="sync-dot" id="sync-dot"></div>
+    <span id="sync-text">All changes saved</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('log',this)">📋 Log</button>
+    <button class="tab" onclick="switchTab('progress',this)">📈 Progress</button>
+    <button class="tab" onclick="switchTab('history',this)">📜 History</button>
+    <button class="tab" onclick="switchTab('settings',this)">⚙️ Settings</button>
+    <button class="tab" onclick="unlockAdmin()" id="admin-tab">🔒 Admin</button>
+  </div>
+
+  <!-- LOG -->
+  <div id="tab-log" class="panel active">
+    <div class="week-card">
+      <div style="font-family:'Fredoka One',cursive;font-size:16px;">📅 This Week</div>
+      <div class="week-days" id="week-days"></div>
+    </div>
+    <div class="streak-card">
+      <div style="font-size:44px;line-height:1;">🔥</div>
+      <div><div class="streak-num" id="streak-num">0</div><div style="font-size:14px;opacity:.9;font-weight:700;">day streak — keep it up!</div></div>
+    </div>
+    <div class="section-title">🎯 Log an Activity</div>
+    <div id="activities-container"></div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div id="tab-progress" class="panel">
+    <div class="section-title">🏆 Milestones</div>
+    <div class="milestone-strip" id="milestone-strip"></div>
+    <div class="section-title">📊 This Week</div>
+    <div id="breakdown-wrap"></div>
+    <div class="section-title" style="margin-top:16px;">👥 Family Leaderboard</div>
+    <div id="leaderboard"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="tab-history" class="panel">
+    <div class="section-title">📜 Recent Activity</div>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="tab-settings" class="panel">
+    <div class="section-title">⚙️ Settings</div>
+    <div class="settings-card">
+      <span class="settings-label">👥 User Names</span>
+      <div id="name-inputs"></div>
+    </div>
+    <div class="settings-card">
+      <span class="settings-label">🎯 Goal Points</span>
+      <div style="display:flex;gap:8px;">
+        <input type="number" id="goal-input" class="settings-input" style="flex:1;" min="1000" step="1000">
+        <button class="log-btn" onclick="updateGoal()" style="border-radius:12px;padding:9px 18px;">Set</button>
+      </div>
+    </div>
+    <div class="settings-card">
+      <span class="settings-label">💵 Points → Dollar Rate</span>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap;">Every</span>
+        <input type="number" id="rate-pts-input" class="settings-input" style="width:100px;" min="100" step="100">
+        <span style="font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap;">pts =</span>
+        <input type="number" id="rate-dollar-input" class="settings-input" style="width:80px;" min="1">
+        <button class="log-btn" onclick="updateRate()" style="border-radius:12px;padding:9px 14px;">Set</button>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted);font-weight:600;" id="rate-preview"></div>
+    </div>
+    <div class="settings-card">
+      <span class="settings-label">🌍 Destination</span>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="dest-input" class="settings-input" style="flex:1;" placeholder="e.g. Tokyo, Paris, NYC...">
+        <button class="log-btn" onclick="updateDest()" style="border-radius:12px;padding:9px 18px;">Set</button>
+      </div>
+    </div>
+    <div class="settings-card">
+      <span class="settings-label">🗑 Danger Zone</span>
+      <button class="log-btn danger" style="width:100%;border-radius:12px;padding:10px;" onclick="confirmReset()">Reset All Points</button>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="tab-admin" class="panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div class="section-title" style="margin-bottom:0;">🔧 Admin Panel</div>
+      <button class="log-btn warn" style="border-radius:10px;padding:7px 14px;font-size:12px;" onclick="lockAdmin()">🔒 Lock</button>
+    </div>
+    <div style="background:#FFF3CD;border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:13px;font-weight:700;color:#856404;">
+      ⚡ Changes update instantly for all users.
+    </div>
+    <div class="settings-card">
+      <span class="settings-label">📋 Edit Activities</span>
+      <div id="admin-activities-list"></div>
+      <div style="margin-top:16px;font-size:13px;font-weight:800;color:#667eea;margin-bottom:8px;">➕ Add New Activity</div>
+      <div class="add-row">
+        <input class="admin-input admin-icon-input" id="new-icon" type="text" placeholder="🎯" maxlength="2">
+        <input class="admin-input admin-name-input" id="new-name" type="text" placeholder="Activity name">
+        <input class="admin-input admin-pts-input" id="new-pts" type="number" placeholder="Points" min="1">
+        <select class="cat-select" id="new-cat">
+          <option value="gold">🏅 Gold</option>
+          <option value="silver">🥈 Silver</option>
+          <option value="daily">⭐ Daily</option>
+          <option value="house">🏠 Household</option>
+          <option value="social">👥 Social</option>
+        </select>
+        <button class="log-btn success" onclick="addActivity()" style="border-radius:10px;padding:7px 16px;">Add ✓</button>
+      </div>
+    </div>
+    <div class="settings-card">
+      <span class="settings-label">🏆 Edit Milestones</span>
+      <div id="admin-milestones-list"></div>
+      <div class="add-row" style="margin-top:8px;">
+        <input class="admin-input admin-icon-input" id="ms-icon" type="text" placeholder="🎉" maxlength="2">
+        <input class="admin-input" style="flex:1;min-width:120px;" id="ms-name" type="text" placeholder="Milestone name">
+        <input class="admin-input admin-pts-input" id="ms-pts" type="number" placeholder="Points" min="1">
+        <button class="log-btn success" onclick="addMilestone()" style="border-radius:10px;padding:7px 16px;">Add ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOCK SCREEN -->
+<div class="lock-screen" id="lock-screen" style="display:none;">
+  <div class="lock-card">
+    <div style="font-size:48px;margin-bottom:8px;">🔐</div>
+    <div style="font-family:'Fredoka One',cursive;font-size:22px;margin-bottom:6px;color:var(--text);">Admin Access</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:20px;">Enter PIN to edit activities &amp; milestones</div>
+    <input type="password" id="pin-input" class="settings-input" placeholder="Enter PIN" style="text-align:center;letter-spacing:6px;font-size:20px;margin-bottom:12px;" maxlength="6">
+    <div style="display:flex;gap:8px;">
+      <button class="log-btn" style="flex:1;border-radius:12px;padding:10px;" onclick="checkPin()">Unlock ✓</button>
+      <button class="log-btn danger" style="flex:1;border-radius:12px;padding:10px;" onclick="closeLock()">Cancel</button>
+    </div>
+    <div style="font-size:12px;color:#E74C3C;margin-top:8px;font-weight:700;" id="pin-error"></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:12px;">Default PIN: 1234</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'adventure_pts_v2';
+const ADMIN_PIN = '1234';
+
+const DEF_ACTS = {
+  gold:[
+    {id:'no_phone_brick',icon:'📵',name:'No Phone 11am–4pm (with Brick)',pts:1200},
+    {id:'swimming',icon:'🏊',name:'Swimming',pts:1000},
+    {id:'running',icon:'🏃',name:'Running',pts:800},
+    {id:'djing',icon:'🎧',name:'DJing / Learning a New Skill',pts:1000},
+    {id:'volunteer_full',icon:'🤝',name:'Full Day Volunteering',pts:1000},
+    {id:'cooking_dinner',icon:'🍳',name:'Cooking Dinner',pts:1000},
+  ],
+  silver:[
+    {id:'reading',icon:'📚',name:'Reading (1 hr)',pts:500},
+    {id:'guitar',icon:'🎸',name:'Playing Guitar',pts:500},
+    {id:'drawing',icon:'🎨',name:'Drawing / Doodling / Art',pts:500},
+    {id:'dancing',icon:'💃',name:'Dancing',pts:500},
+    {id:'walking',icon:'🚶',name:'Walking (1 hr)',pts:200},
+    {id:'phone_friend',icon:'📞',name:'Phoning a Friend',pts:500},
+    {id:'volunteer_half',icon:'🤝',name:'Half Day Volunteering',pts:500},
+  ],
+  daily:[
+    {id:'daily_full',icon:'⭐',name:'Daily Activity (24 hrs)',pts:1200},
+    {id:'daily_half',icon:'🌟',name:'Daily Activity (Half Day)',pts:600},
+  ],
+  house:[
+    {id:'kitchen_bonus',icon:'🏠',name:'Kitchen Bonus (weekly)',pts:500},
+    {id:'vacuuming',icon:'🧹',name:'Vacuuming',pts:300},
+    {id:'mopping',icon:'🫧',name:'Mopping',pts:300},
+    {id:'garbage',icon:'🗑️',name:'Taking Out Garbage',pts:200},
+  ],
+  social:[
+    {id:'family_games',icon:'🎲',name:'Initiate Family Games',pts:500},
+    {id:'group_walk',icon:'👨‍👩‍👧',name:'Initiate Group Walk',pts:500},
+    {id:'movies',icon:'🎬',name:'Organise Going to Movies',pts:500},
+    {id:'friends',icon:'👫',name:'Social Activities with Friends',pts:500},
+    {id:'new_people',icon:'🌍',name:'Meeting New People',pts:800},
+    {id:'wildcard',icon:'🃏',name:'Wild Card (negotiate)',pts:500},
+  ]
+};
+
+const DEF_MS = [
+  {pts:5000,icon:'✈️',name:'First Flight'},
+  {pts:10000,icon:'🌍',name:'Globe Trotter'},
+  {pts:20000,icon:'🏖️',name:'Beach Mode'},
+  {pts:35000,icon:'🗺️',name:'Explorer'},
+  {pts:50000,icon:'🌟',name:'Star Traveller'},
+  {pts:75000,icon:'🏆',name:'Champion'},
+  {pts:100000,icon:'🎉',name:'Dream Trip!'},
+];
+
+const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const CAT_LABELS={gold:'🏅 Gold',silver:'🥈 Silver',daily:'⭐ Daily',house:'🏠 Household',social:'👥 Social'};
+const CAT_CLS={gold:'cat-gold',silver:'cat-silver',daily:'cat-daily',house:'cat-house',social:'cat-social'};
+const CONF=['#667eea','#FFD700','#FF6B6B','#27AE60','#8E44AD','#FF8E53'];
+
+function defState(){return{totalPts:0,goal:100000,destination:'',streak:0,ratePts:10000,rateDollars:100,weekPts:{0:0,1:0,2:0,3:0,4:0,5:0,6:0},users:[{name:'User 1',pts:0},{name:'User 2',pts:0},{name:'User 3',pts:0}],history:[],activities:JSON.parse(JSON.stringify(DEF_ACTS)),milestones:JSON.parse(JSON.stringify(DEF_MS))};}
+
+let state=defState(),currentUser=0,adminUnlocked=false,saveTimer=null;
+
+function load(){try{const r=localStorage.getItem(STORAGE_KEY);if(r){const s=JSON.parse(r);state={...defState(),...s};if(!state.activities)state.activities=JSON.parse(JSON.stringify(DEF_ACTS));if(!state.milestones)state.milestones=JSON.parse(JSON.stringify(DEF_MS));if(!state.ratePts){state.ratePts=10000;state.rateDollars=100;}}}catch(e){}}
+function save(){clearTimeout(saveTimer);setSyncing(true);saveTimer=setTimeout(()=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){}setSyncing(false);},600);}
+function setSyncing(on){const d=document.getElementById('sync-dot'),t=document.getElementById('sync-text');if(on){d.className='sync-dot saving';t.textContent='Saving...';}else{d.className='sync-dot';t.textContent='All changes saved';}}
+function dv(pts){return'$'+((pts/state.ratePts)*state.rateDollars).toFixed(2);}
+function switchUser(idx){currentUser=idx;document.querySelectorAll('.user-pill').forEach((p,i)=>p.classList.toggle('active',i===idx));}
+
+function unlockAdmin(){
+  if(adminUnlocked){switchTab('admin',document.getElementById('admin-tab'));return;}
+  document.getElementById('lock-screen').style.display='flex';
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-error').textContent='';
+  setTimeout(()=>document.getElementById('pin-input').focus(),100);
+}
+function checkPin(){
+  if(document.getElementById('pin-input').value===ADMIN_PIN){
+    adminUnlocked=true;closeLock();
+    document.getElementById('admin-tab').textContent='🔧 Admin';
+    switchTab('admin',document.getElementById('admin-tab'));
+    renderAdminActivities();renderAdminMilestones();toast('Admin access granted! 🔓');
+  }else{document.getElementById('pin-error').textContent='Wrong PIN. Try again!';document.getElementById('pin-input').value='';}
+}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('lock-screen').style.display==='flex')checkPin();});
+function closeLock(){document.getElementById('lock-screen').style.display='none';}
+function lockAdmin(){adminUnlocked=false;document.getElementById('admin-tab').textContent='🔒 Admin';switchTab('log',document.querySelector('.tab'));toast('Admin locked 🔒');}
+
+function renderHero(){
+  const pct=Math.min(100,(state.totalPts/state.goal)*100);
+  document.getElementById('total-pts').textContent=state.totalPts.toLocaleString();
+  document.getElementById('dollar-val').textContent=dv(state.totalPts);
+  document.getElementById('goal-bar').style.width=Math.max(pct,3)+'%';
+  document.getElementById('goal-pct').textContent=Math.round(pct)+'%';
+  document.getElementById('goal-label-right').textContent='Goal: '+state.goal.toLocaleString()+' pts = '+dv(state.goal);
+  document.getElementById('dest-tag').textContent=state.destination?'🏁 '+state.destination:'🏁 Destination TBC';
+  document.getElementById('streak-num').textContent=state.streak;
+  state.users.forEach((u,i)=>{const p=document.getElementById('pill-'+i);if(p)p.textContent='👤 '+u.name;});
+}
+
+function renderWeek(){
+  const today=new Date().getDay();
+  document.getElementById('week-days').innerHTML=DAYS.map((d,i)=>{
+    const pts=state.weekPts[i]||0;
+    return`<div class="day-pip ${pts>0&&i<=today?'active':''} ${i===today?'today':''}"><span>${d}</span><span class="pip-pts">${pts>0?pts.toLocaleString():'—'}</span></div>`;
+  }).join('');
+}
+
+function renderActivities(){
+  document.getElementById('activities-container').innerHTML=Object.keys(state.activities).map(cat=>{
+    const list=state.activities[cat];if(!list||!list.length)return'';
+    return`<div class="category-block"><div class="category-header ${CAT_CLS[cat]}">${CAT_LABELS[cat]}</div>${
+      list.map(a=>`<div class="activity-row">
+        <div class="act-icon">${a.icon}</div>
+        <div class="act-name">${a.name}</div>
+        <div class="act-pts">+${a.pts.toLocaleString()} pts<br><span class="act-dollar">${dv(a.pts)}</span></div>
+        <button class="log-btn" onclick="logActivity('${a.id}','${a.name.replace(/'/g,"\\'")}',${a.pts},'${a.icon}')">Log ✓</button>
+      </div>`).join('')
+    }</div>`;
+  }).join('');
+}
+
+function renderMilestones(){
+  const ms=[...state.milestones].sort((a,b)=>a.pts-b.pts);
+  document.getElementById('milestone-strip').innerHTML=ms.map(m=>{
+    const achieved=state.totalPts>=m.pts,isNext=!achieved&&ms.find(x=>state.totalPts<x.pts)===m;
+    return`<div class="milestone-card ${achieved?'achieved':''} ${isNext?'next':''}">
+      ${achieved?'<div class="ms-badge">⭐</div>':''}
+      <div class="ms-icon">${m.icon}</div><div class="ms-pts">${m.pts.toLocaleString()}</div>
+      <div class="ms-name">${m.name}</div>
+      <div style="font-size:10px;color:#27AE60;font-weight:700;margin-top:2px;">${dv(m.pts)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderBreakdown(){
+  const wt=Object.values(state.weekPts).reduce((a,b)=>a+b,0);
+  const bars=DAYS.map((d,i)=>{const pts=state.weekPts[i]||0,pct=wt>0?(pts/wt)*100:0;
+    return`<div style="flex:1;text-align:center;"><div style="background:#EEF2FF;border-radius:8px;height:80px;display:flex;align-items:flex-end;overflow:hidden;margin-bottom:4px;"><div style="width:100%;background:linear-gradient(180deg,#667eea,#764ba2);border-radius:6px;height:${Math.max(pct,0)}%;transition:height .6s;"></div></div><div style="font-size:10px;font-weight:700;color:var(--muted);">${d}</div><div style="font-size:10px;font-weight:800;color:#667eea;">${pts>0?pts.toLocaleString():''}</div></div>`;
+  }).join('');
+  document.getElementById('breakdown-wrap').innerHTML=`<div style="background:white;border-radius:16px;padding:16px;border:1.5px solid #EDE9FE;margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:4px;">Weekly total</div><div style="font-size:22px;font-weight:900;color:#667eea;">${wt.toLocaleString()} pts <span style="font-size:16px;color:#27AE60;">${dv(wt)}</span></div><div style="display:flex;gap:6px;align-items:flex-end;height:110px;margin-top:12px;">${bars}</div></div>`;
+}
+
+function renderLeaderboard(){
+  const s=[...state.users].map((u,i)=>({...u,idx:i})).sort((a,b)=>b.pts-a.pts);
+  document.getElementById('leaderboard').innerHTML=s.map((u,r)=>`<div class="lb-row"><div style="font-size:24px;">${['🥇','🥈','🥉'][r]||'👤'}</div><div style="flex:1;"><div style="font-size:14px;font-weight:800;">${u.name}</div></div><div style="text-align:right;"><div style="font-size:18px;font-weight:900;color:#667eea;">${(u.pts||0).toLocaleString()} pts</div><div style="font-size:12px;font-weight:700;color:#27AE60;">${dv(u.pts||0)}</div></div></div>`).join('');
+}
+
+function renderHistory(){
+  const el=document.getElementById('history-list');
+  if(!state.history.length){el.innerHTML='<div class="empty-state">No activities logged yet!<br>Log your first activity 🚀</div>';return;}
+  el.innerHTML=[...state.history].reverse().slice(0,50).map(h=>`<div class="history-row"><div><div class="history-name">${h.icon} ${h.name}</div><div class="history-meta">${h.date}<span class="history-user-badge">${h.user}</span></div></div><div style="text-align:right;"><div class="history-pts">+${h.pts.toLocaleString()}</div><div style="font-size:11px;font-weight:700;color:#27AE60;">${dv(h.pts)}</div></div></div>`).join('');
+}
+
+function renderNameInputs(){
+  document.getElementById('name-inputs').innerHTML=state.users.map((u,i)=>`<div style="display:flex;gap:8px;margin-bottom:8px;"><span style="font-size:18px;line-height:36px;">👤</span><input class="settings-input" style="flex:1;" type="text" value="${u.name}" placeholder="User ${i+1} name" oninput="updateName(${i},this.value)"></div>`).join('');
+  document.getElementById('goal-input').value=state.goal;
+  document.getElementById('dest-input').value=state.destination;
+  document.getElementById('rate-pts-input').value=state.ratePts;
+  document.getElementById('rate-dollar-input').value=state.rateDollars;
+  updateRatePreview();
+}
+
+function updateRatePreview(){
+  const rp=parseInt(document.getElementById('rate-pts-input').value)||10000;
+  const rd=parseInt(document.getElementById('rate-dollar-input').value)||100;
+  document.getElementById('rate-preview').textContent=`Currently: every ${rp.toLocaleString()} pts = $${rd} → your ${state.totalPts.toLocaleString()} pts = $${((state.totalPts/rp)*rd).toFixed(2)}`;
+}
+
+function renderAdminActivities(){
+  document.getElementById('admin-activities-list').innerHTML=Object.keys(state.activities).map(cat=>{
+    const list=state.activities[cat]||[];
+    return`<div style="margin-bottom:12px;"><div style="font-size:12px;font-weight:800;color:var(--muted);margin-bottom:6px;">${CAT_LABELS[cat]}</div>${
+      list.map((a,i)=>`<div class="admin-activity-row">
+        <input class="admin-input admin-icon-input" value="${a.icon}" onchange="editAct('${cat}',${i},'icon',this.value)">
+        <input class="admin-input admin-name-input" value="${a.name}" onchange="editAct('${cat}',${i},'name',this.value)">
+        <input class="admin-input admin-pts-input" type="number" value="${a.pts}" onchange="editAct('${cat}',${i},'pts',parseInt(this.value))">
+        <button class="delete-btn" onclick="delAct('${cat}',${i})">✕</button>
+      </div>`).join('')
+    }</div>`;
+  }).join('');
+}
+
+function renderAdminMilestones(){
+  const ms=[...state.milestones].sort((a,b)=>a.pts-b.pts);
+  document.getElementById('admin-milestones-list').innerHTML=ms.map((m,i)=>`<div class="admin-activity-row">
+    <input class="admin-input admin-icon-input" value="${m.icon}" onchange="editMs(${i},'icon',this.value)">
+    <input class="admin-input" style="flex:1;min-width:120px;" value="${m.name}" onchange="editMs(${i},'name',this.value)">
+    <input class="admin-input admin-pts-input" type="number" value="${m.pts}" onchange="editMs(${i},'pts',parseInt(this.value))">
+    <button class="delete-btn" onclick="delMs(${i})">✕</button>
+  </div>`).join('');
+}
+
+function logActivity(id,name,pts,icon){
+  const prev=state.totalPts;state.totalPts+=pts;
+  const today=new Date().getDay();state.weekPts[today]=(state.weekPts[today]||0)+pts;
+  state.users[currentUser].pts=(state.users[currentUser].pts||0)+pts;
+  const now=new Date();state.history.push({id,name,pts,icon,user:state.users[currentUser].name,date:now.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})});
+  const ms=state.milestones.sort((a,b)=>a.pts-b.pts),unlocked=ms.filter(m=>prev<m.pts&&state.totalPts>=m.pts);
+  save();renderHero();renderWeek();renderMilestones();confetti();
+  if(unlocked.length)toast('🎉 Milestone: '+unlocked[0].name+' = '+dv(unlocked[0].pts)+'!');
+  else toast('+'+pts.toLocaleString()+' pts ('+dv(pts)+') — '+name+'!');
+}
+
+function updateGoal(){const v=parseInt(document.getElementById('goal-input').value);if(v>0){state.goal=v;save();renderHero();toast('Goal: '+v.toLocaleString()+' pts = '+dv(v));}}
+function updateDest(){const v=document.getElementById('dest-input').value.trim();if(v){state.destination=v;save();renderHero();toast('Destination: '+v+' 🌍');}}
+function updateRate(){const rp=parseInt(document.getElementById('rate-pts-input').value),rd=parseInt(document.getElementById('rate-dollar-input').value);if(rp>0&&rd>0){state.ratePts=rp;state.rateDollars=rd;save();renderHero();renderActivities();renderMilestones();updateRatePreview();toast('Rate: '+rp.toLocaleString()+' pts = $'+rd);}}
+function updateName(idx,name){state.users[idx].name=name;document.getElementById('pill-'+idx).textContent='👤 '+name;save();}
+function confirmReset(){if(confirm('Reset ALL points? This cannot be undone!')){state.totalPts=0;state.streak=0;state.weekPts={0:0,1:0,2:0,3:0,4:0,5:0,6:0};state.history=[];state.users=state.users.map(u=>({...u,pts:0}));save();renderAll();toast('Reset done. Fresh start! 🚀');}}
+
+function editAct(cat,idx,f,v){state.activities[cat][idx][f]=v;save();renderActivities();}
+function delAct(cat,idx){if(confirm('Delete this activity?')){state.activities[cat].splice(idx,1);save();renderActivities();renderAdminActivities();toast('Deleted!');}}
+function addActivity(){
+  const icon=document.getElementById('new-icon').value.trim()||'⭐',name=document.getElementById('new-name').value.trim(),pts=parseInt(document.getElementById('new-pts').value),cat=document.getElementById('new-cat').value;
+  if(!name||!pts){toast('Please fill in name and points!');return;}
+  if(!state.activities[cat])state.activities[cat]=[];
+  state.activities[cat].push({id:'custom_'+Date.now(),icon,name,pts});
+  save();renderActivities();renderAdminActivities();
+  document.getElementById('new-icon').value='';document.getElementById('new-name').value='';document.getElementById('new-pts').value='';
+  toast('Added: '+name+' ✓');
+}
+function editMs(idx,f,v){state.milestones[idx][f]=v;save();renderMilestones();}
+function delMs(idx){if(confirm('Delete milestone?')){state.milestones.splice(idx,1);save();renderMilestones();renderAdminMilestones();toast('Deleted!');}}
+function addMilestone(){
+  const icon=document.getElementById('ms-icon').value.trim()||'🏆',name=document.getElementById('ms-name').value.trim(),pts=parseInt(document.getElementById('ms-pts').value);
+  if(!name||!pts){toast('Please fill in name and points!');return;}
+  state.milestones.push({icon,name,pts});save();renderMilestones();renderAdminMilestones();
+  document.getElementById('ms-icon').value='';document.getElementById('ms-name').value='';document.getElementById('ms-pts').value='';
+  toast('Added: '+name+' ✓');
+}
+
+function switchTab(tab,btn){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(tab==='progress'){renderMilestones();renderBreakdown();renderLeaderboard();}
+  if(tab==='history')renderHistory();
+  if(tab==='settings')renderNameInputs();
+  if(tab==='admin'){renderAdminActivities();renderAdminMilestones();}
+}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
+function confetti(){
+  const w=document.createElement('div');w.className='confetti-wrap';
+  const h=document.querySelector('.hero').getBoundingClientRect();
+  w.style.cssText=`left:${h.left+h.width/2}px;top:${h.bottom-20}px;`;
+  for(let i=0;i<22;i++){const d=document.createElement('div');d.className='conf-dot';const a=(i/22)*360,dist=55+Math.random()*70;d.style.cssText=`background:${CONF[i%CONF.length]};--tx:${Math.cos(a*Math.PI/180)*dist}px;--ty:${(Math.sin(a*Math.PI/180)*dist-90)}px;left:0;top:0;animation-delay:${Math.random()*.25}s;`;w.appendChild(d);}
+  document.body.appendChild(w);setTimeout(()=>w.remove(),1600);
+}
+function renderAll(){renderHero();renderWeek();renderActivities();renderMilestones();}
+
+load();renderAll();setSyncing(false);
+</script>
+</body>
+</html>
